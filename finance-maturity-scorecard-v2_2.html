@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Maturity Scorecard™ | HM Advisory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0B1B2B; --navy-2:#122A42; --gold:#C6A15B; --gold-soft:rgba(198,161,91,0.35);
+    --cream:#F5F1E7; --cream-2:#EDE6D4; --ink:#16212E; --muted:#667085; --muted-dark:#93A5B9;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Poppins',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+  .wrap{ max-width:760px; margin:0 auto; padding:56px 24px 90px; }
+
+  header{ text-align:center; margin-bottom:36px; }
+  .badge{ width:60px; height:60px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center;
+    justify-content:center; margin:0 auto 20px; font-family:'Lora',serif; font-weight:600; font-size:20px; color:var(--gold); }
+  .eyebrow{ font-size:13px; letter-spacing:3px; text-transform:uppercase; color:#9A7A32; font-weight:600; }
+  h1{ font-family:'Lora',serif; font-weight:600; font-size:36px; margin:14px 0 12px; line-height:1.2; }
+  .tagline-top{ color:var(--muted); font-size:15.5px; font-weight:300; max-width:540px; margin:0 auto; line-height:1.55; }
+
+  .progress-track{ height:5px; background:var(--cream-2); border-radius:3px; margin:30px 0 8px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--gold); width:0%; transition:width .35s ease; }
+  .progress-label{ text-align:right; font-size:12px; color:var(--muted); letter-spacing:1px; }
+
+  .card{ background:#fff; border-radius:16px; padding:38px 34px; margin-top:24px; box-shadow:0 8px 30px rgba(11,27,43,0.08); border:1px solid rgba(11,27,43,0.06); }
+  .q-dim-row{ display:flex; align-items:center; gap:14px; }
+  .q-icon{ font-size:32px; }
+  .q-dim{ font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); font-weight:700; }
+  .q-title{ font-family:'Lora',serif; font-size:25px; font-weight:600; margin:4px 0 6px; }
+  .q-def{ color:var(--muted); font-size:15px; font-weight:300; line-height:1.5; margin:14px 0 26px; }
+
+  .scale{ display:flex; flex-direction:column; gap:10px; }
+  .opt{ }
+  .opt input{ display:none; }
+  .opt label{ display:flex; align-items:center; gap:16px; cursor:pointer; padding:14px 18px; border-radius:12px;
+    border:1.5px solid #E4DECB; transition:all .15s ease; }
+  .opt label:hover{ border-color:var(--gold); }
+  .opt .num{ width:34px; height:34px; border-radius:50%; border:1.5px solid #C9C2AA; display:flex; align-items:center;
+    justify-content:center; font-family:'Lora',serif; font-weight:600; font-size:14px; color:var(--ink); flex:none; }
+  .opt .txt{ text-align:left; }
+  .opt .lvl-tag{ font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#9A7A32; font-weight:600; }
+  .opt .lvl-name{ font-family:'Lora',serif; font-size:19px; font-weight:700; color:var(--ink); margin-top:2px; }
+  .opt .lvl-desc{ font-size:13px; color:var(--muted); margin-top:4px; font-weight:300; }
+  .opt input:checked + label{ border-color:var(--gold); background:#FBF7EE; }
+  .opt input:checked + label .num{ background:var(--gold); border-color:var(--gold); color:var(--navy); }
+
+  .nav-row{ display:flex; justify-content:space-between; margin-top:28px; }
+  button{ font-family:'Poppins',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.4px; padding:14px 28px;
+    border-radius:8px; border:none; cursor:pointer; transition:opacity .15s ease; }
+  button:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-primary:hover:not(:disabled){ opacity:0.88; }
+  .btn-ghost{ background:transparent; color:var(--muted); border:1.5px solid #D9D2BC; }
+  .btn-ghost:hover:not(:disabled){ border-color:var(--gold); color:var(--ink); }
+  .btn-gold{ background:var(--gold); color:var(--navy); }
+  .btn-gold:hover:not(:disabled){ opacity:0.9; }
+
+  .result{ display:none; }
+  .result.show{ display:block; }
+  .tier-badge{ display:inline-block; padding:8px 22px; border-radius:30px; background:var(--navy); color:var(--gold);
+    font-size:13px; letter-spacing:2px; text-transform:uppercase; font-weight:700; margin-bottom:16px; }
+  .score-big{ font-family:'Lora',serif; font-size:60px; font-weight:600; color:var(--navy); line-height:1; }
+  .score-of{ font-size:15px; color:var(--muted); margin-top:6px; }
+  .tier-name{ font-family:'Lora',serif; font-size:32px; font-weight:600; margin:16px 0 8px; }
+  .tier-desc{ font-size:16px; line-height:1.6; color:var(--muted); font-weight:300; max-width:600px; margin:0 auto; }
+
+  .stair-mini{ display:flex; align-items:flex-end; gap:8px; height:80px; margin:30px 0 10px; }
+  .stair-mini div{ flex:1; border-radius:6px 6px 0 0; position:relative; }
+  .stair-mini div span{ position:absolute; top:-22px; left:0; right:0; text-align:center; font-size:10px; color:var(--muted); letter-spacing:0.5px; }
+  .mt1{ height:28%; background:#E3CBA9; } .mt2{ height:46%; background:#D9D9D9; }
+  .mt3{ height:64%; background:#EBD08A; } .mt4{ height:82%; background:#C9DEE6; } .mt5{ height:100%; background:var(--gold); }
+  .stair-mini div.active{ outline:3px solid var(--navy); outline-offset:2px; }
+
+  .benchmark-box{ margin-top:26px; text-align:left; }
+  .benchmark-box .bb-title{ font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#9A7A32; font-weight:700; margin-bottom:14px; }
+  .bench-row{ display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .bench-row .blabel{ width:180px; font-size:13.5px; font-weight:500; color:var(--ink); flex:none; }
+  .bench-row.you .blabel{ font-weight:700; color:var(--navy); }
+  .bench-row .btrack{ flex:1; height:13px; background:var(--cream-2); border-radius:7px; overflow:hidden; }
+  .bench-row .bfill{ height:100%; border-radius:7px; background:#C9C2AA; }
+  .bench-row.you .bfill{ background:var(--gold); }
+  .bench-row .bval{ width:30px; text-align:right; font-family:'Lora',serif; font-weight:700; font-size:14px; flex:none; }
+  .bench-note{ margin-top:12px; font-size:12.5px; color:var(--muted); font-style:italic; }
+
+  .sw-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:8px; }
+  .sw-col h3{ font-family:'Lora',serif; font-size:18px; margin-bottom:12px; }
+  .sw-col.strength h3{ color:#3F7A54; }
+  .sw-col.weak h3{ color:#B14B3E; }
+  .sw-item{ display:flex; gap:10px; align-items:center; font-size:14px; padding:8px 0; border-bottom:1px solid #F0EAD8; }
+  .sw-item .ic{ font-size:18px; }
+
+  .breakdown{ margin-top:8px; }
+  .breakdown-row{ display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid #EEE7D5; }
+  .breakdown-row .ic{ font-size:18px; width:24px; }
+  .breakdown-row .name{ flex:1; font-size:13.5px; font-weight:500; }
+  .breakdown-row .bar-track{ flex:1.6; height:8px; background:var(--cream-2); border-radius:4px; overflow:hidden; }
+  .breakdown-row .bar-fill{ height:100%; background:var(--gold); }
+  .breakdown-row .val{ width:36px; text-align:right; font-family:'Lora',serif; font-weight:600; font-size:14px; }
+
+  .cta{ margin-top:32px; background:var(--navy); border-radius:14px; padding:30px 28px; color:#EDEFF2; text-align:left; }
+  .cta .label{ font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:12px; font-weight:700; }
+  .cta p{ font-size:15.5px; line-height:1.6; font-weight:300; margin-bottom:18px; }
+  .cta a{ color:var(--gold); font-weight:600; text-decoration:none; }
+  .cta a:hover{ text-decoration:underline; }
+
+  .pdf-row{ display:flex; gap:14px; justify-content:center; margin-top:26px; flex-wrap:wrap; }
+
+  footer{ text-align:center; margin-top:46px; }
+  .footer-tagline{ font-family:'Lora',serif; font-style:italic; color:#9A7A32; font-size:14px; }
+  .footer-brand{ font-size:11px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-top:8px; }
+
+  .lead-view{ }
+  .lead-view .card{ text-align:left; }
+  .lead-intro{ font-size:15px; color:var(--muted); font-weight:300; line-height:1.6; margin-bottom:26px; }
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; letter-spacing:0.5px; color:var(--ink); margin-bottom:7px; }
+  .field label .opt{ font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0; }
+  .field input{ width:100%; padding:13px 16px; font-family:'Poppins',sans-serif; font-size:14.5px; border-radius:9px;
+    border:1.5px solid #E4DECB; background:#fff; color:var(--ink); }
+  .field input:focus{ outline:none; border-color:var(--gold); }
+  .field-row{ display:flex; gap:14px; }
+  .field-row .field{ flex:1; }
+  .field-error{ font-size:12px; color:#B14B3E; margin-top:5px; display:none; }
+  .field.invalid input{ border-color:#B14B3E; }
+  .field.invalid .field-error{ display:block; }
+  .lead-note{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+  .review-cta{ margin-top:20px; background:#fff; border:1.5px solid var(--gold); border-radius:14px; padding:28px 26px; text-align:center; }
+  .review-cta .rc-title{ font-family:'Lora',serif; font-size:20px; font-weight:600; color:var(--ink); margin-bottom:8px; }
+  .review-cta .rc-body{ font-size:14.5px; color:var(--muted); font-weight:300; line-height:1.5; margin-bottom:18px; max-width:480px; margin-left:auto; margin-right:auto; }
+
+  @media (max-width:600px){
+    .wrap{ padding:36px 16px 70px; }
+    h1{ font-size:26px; }
+    .card{ padding:24px 18px; }
+    .score-big{ font-size:44px; }
+    .tier-name{ font-size:24px; }
+    .sw-grid{ grid-template-columns:1fr; }
+    .field-row{ flex-direction:column; gap:0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="badge">HM</div>
+    <div class="eyebrow">HM Advisory — Fractional CFO &amp; FP&amp;A</div>
+    <h1>Finance Maturity Scorecard™</h1>
+    <div class="tagline-top">Rate 10 dimensions of your finance function from Level 1 (Reactive) to Level 5 (Intelligent Finance). Get your score, your tier, and a downloadable report.</div>
+  </header>
+
+  <div class="lead-view" id="leadView">
+    <div class="card">
+      <div class="lead-intro">Enter your details to start. You'll get your score, a short summary, and a downloadable report the moment you finish — takes about 10 minutes.</div>
+      <div class="field-row">
+        <div class="field" id="f-name">
+          <label>Full name</label>
+          <input type="text" id="inpName" placeholder="Jane Founder" autocomplete="name">
+          <div class="field-error">Please enter your name</div>
+        </div>
+        <div class="field" id="f-role">
+          <label>Role <span class="opt">(optional)</span></label>
+          <input type="text" id="inpRole" placeholder="CEO / Founder" autocomplete="organization-title">
+        </div>
+      </div>
+      <div class="field" id="f-email">
+        <label>Work email</label>
+        <input type="email" id="inpEmail" placeholder="jane@company.com" autocomplete="email">
+        <div class="field-error">Please enter a valid work email</div>
+      </div>
+      <div class="field" id="f-company">
+        <label>Company <span class="opt">(optional)</span></label>
+        <input type="text" id="inpCompany" placeholder="Company name" autocomplete="organization">
+      </div>
+      <button class="btn-primary" id="startBtn" style="width:100%; padding:15px;">Start My Assessment</button>
+      <div class="lead-note">Your details are only used to send you your Finance Maturity Report and, if you'd like, follow up about your results.</div>
+    </div>
+  </div>
+
+  <div id="quiz-view" style="display:none;">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">Question 1 of 10</div>
+    <div class="card" id="quizCard"></div>
+    <div class="nav-row">
+      <button class="btn-ghost" id="backBtn" disabled>Back</button>
+      <button class="btn-primary" id="nextBtn" disabled>Next</button>
+    </div>
+  </div>
+
+  <div class="result" id="resultView">
+    <div class="card" style="text-align:center;">
+      <div class="tier-badge" id="tierBadge">Your Tier</div>
+      <div class="score-big" id="scoreBig">0</div>
+      <div class="score-of">out of 50</div>
+      <div class="tier-name" id="tierName">—</div>
+      <div class="tier-desc" id="tierDesc">—</div>
+
+      <div class="stair-mini">
+        <div class="mt1" id="mt1"><span>10–19<br>Bronze</span></div>
+        <div class="mt2" id="mt2"><span>20–28<br>Silver</span></div>
+        <div class="mt3" id="mt3"><span>29–37<br>Gold</span></div>
+        <div class="mt4" id="mt4"><span>38–45<br>Platinum</span></div>
+        <div class="mt5" id="mt5"><span>46–50<br>World Class</span></div>
+      </div>
+
+      <div class="benchmark-box">
+        <div class="bb-title">How you compare</div>
+        <div id="benchmarkChart"></div>
+        <div class="bench-note">Benchmark figures based on my work with growth-stage SaaS and services companies.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sw-grid">
+        <div class="sw-col strength">
+          <h3>Strengths</h3>
+          <div id="strengthsList"></div>
+        </div>
+        <div class="sw-col weak">
+          <h3>Focus areas</h3>
+          <div id="weaknessesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card breakdown">
+      <div class="q-dim" style="margin-bottom:18px;">Full breakdown</div>
+      <div id="breakdownList"></div>
+    </div>
+
+    <div class="pdf-row">
+      <button class="btn-gold" id="downloadBtn">Download my Finance Maturity Report (PDF)</button>
+    </div>
+
+    <div class="review-cta">
+      <div class="rc-title">Would you like a complimentary 30-minute Finance Maturity Review?</div>
+      <div class="rc-body">I'll walk through your results with you, sanity-check the score against what I'm seeing across clients, and outline what closing the biggest gap would actually take.</div>
+      <a class="btn-gold" id="bookReviewBtn" style="text-decoration:none; display:inline-block; padding:14px 28px;" href="https://calendly.com/harshitdusad/30min" target="_blank" rel="noopener">Book my complimentary review</a>
+      <div style="margin-top:14px;"><a id="emailInsteadLink" href="#" style="font-size:13px; color:var(--muted); text-decoration:underline;">or email me instead</a></div>
+    </div>
+
+    <div style="text-align:center; margin-top:22px;">
+      <button class="btn-ghost" id="retakeBtn">Retake the assessment</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-tagline">"Your Numbers Should Work as Hard as You Do."</div>
+    <div class="footer-brand">Finance Maturity Scorecard™ · A proprietary HM Advisory framework</div>
+  </footer>
+
+</div>
+
+<script>
+const LEVEL_NAMES = ["Reactive", "Structured", "Managed", "Strategic", "Intelligent Finance"];
+
+const dimensions = [
+  { icon:"📈", name:"Planning & Forecasting", def:"Measures your ability to plan ahead, budget accurately, and forecast what's coming.",
+    levels:["Annual budget, rarely revisited","Static budget, occasional updates","Rolling forecast, quarterly refresh","Driver-based forecast, monthly refresh","Real-time scenario planning"] },
+  { icon:"💰", name:"Cash Flow", def:"Measures your ability to predict, manage, and optimize business liquidity.",
+    levels:["No visibility beyond bank balance","Basic weekly tracking in spreadsheets","13-week rolling cash forecast","Cash forecast tied to scenarios","Real-time visibility, automated alerts"] },
+  { icon:"📊", name:"Management Reporting", def:"Measures how reliably numbers reach the people who need to act on them.",
+    levels:["Manual reports, error-prone","Templated reports, still Excel-heavy","Standardized monthly dashboards","Self-serve BI, near real-time","Predictive analytics guide decisions"] },
+  { icon:"🎯", name:"KPIs", def:"Measures whether you track the metrics that actually drive the business.",
+    levels:["No defined KPIs tracked","A few metrics, tracked inconsistently","Core KPI set tracked monthly","KPI dashboard tied to targets","Predictive KPIs drive proactive action"] },
+  { icon:"🛡️", name:"Financial Controls", def:"Measures how well the business protects itself from its own numbers.",
+    levels:["Informal or undocumented controls","Basic controls, inconsistently applied","Documented SOPs, reviewed periodically","Strong controls, audit-ready always","Governance embedded, continuously monitored"] },
+  { icon:"🔄", name:"Working Capital", def:"Measures how actively you manage what you're owed and what you owe.",
+    levels:["No working capital discipline","AR/AP tracked, not actively managed","Working capital reviewed monthly","Active DSO/DPO optimization","Working capital as strategic lever"] },
+  { icon:"⚙️", name:"Finance Technology", def:"Measures whether your systems can be trusted as a single source of truth.",
+    levels:["Disconnected spreadsheets","One system, heavy manual reconciliation","Integrated ERP, partial automation","Automated close, clean data pipelines","Fully integrated stack, AI-augmented"] },
+  { icon:"🧭", name:"Strategic Decision Support", def:"Measures whether finance shapes decisions, or just reports on them.",
+    levels:["Finance reports the past","Finance explains variances after","Finance informs some decisions","Finance partners with leadership","Finance shapes strategy & capital calls"] },
+  { icon:"🚀", name:"Investor Readiness", def:"Measures how ready the business is for diligence, on any given day.",
+    levels:["No data room, ad hoc requests","Basic data room, needs cleanup","Organized data room, minor gaps","Audit-ready, investor-grade reporting","Due-diligence ready at all times"] },
+  { icon:"👥", name:"Finance Team & Governance", def:"Measures whether your team and structure can carry the business forward.",
+    levels:["One generalist doing everything","Small team, unclear ownership","Defined roles, some redundancy","Right-sized team, clear governance","High-performing team, board-level trust"] }
+];
+
+const tiers = [
+  { min:10, max:19, name:"Bronze",      key:"mt1", desc:"Foundational. Finance is mostly reactive, with heavy manual effort behind every number." },
+  { min:20, max:28, name:"Silver",      key:"mt2", desc:"The basics are in place, but reporting and forecasting are still manual in several dimensions." },
+  { min:29, max:37, name:"Gold",        key:"mt3", desc:"Structured and largely reliable — most of the function runs on process, not heroics." },
+  { min:38, max:45, name:"Platinum",    key:"mt4", desc:"Proactive, automated, and investor-ready. Finance is a dependable operating partner." },
+  { min:46, max:50, name:"World Class", key:"mt5", desc:"Finance operates as a strategic growth engine, not a back-office function." }
+];
+
+const NEXT_STEPS = {
+  "Planning & Forecasting": "Move to a rolling, driver-based forecast refreshed monthly instead of a static annual budget.",
+  "Cash Flow": "Build a 13-week rolling cash flow forecast and review it weekly.",
+  "Management Reporting": "Standardize a monthly reporting pack and move off ad hoc spreadsheet reports.",
+  "KPIs": "Define a core KPI set tied to the business model and track it consistently.",
+  "Financial Controls": "Document SOPs for the close process and key approval workflows.",
+  "Working Capital": "Set DSO/DPO targets and review working capital monthly, not just at close.",
+  "Finance Technology": "Integrate your core systems to remove manual reconciliation from the close.",
+  "Strategic Decision Support": "Bring finance into planning conversations earlier, not just for the readout.",
+  "Investor Readiness": "Build a standing data room so diligence doesn't start from zero.",
+  "Finance Team & Governance": "Clarify ownership across the team and formalize a reporting line to leadership."
+};
+
+let current = 0;
+const answers = new Array(dimensions.length).fill(null);
+let leadInfo = { name:'', email:'', company:'', role:'' };
+
+// Replace with your own Formspree endpoint (sign up free at formspree.io) to receive
+// an email + dashboard entry for every "started" (lead form submitted) and
+// "completed" (assessment finished) event.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+
+function submitLead(payload){
+  if(FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return; // not set up yet — no-op
+  fetch(FORMSPREE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(()=>{ /* fail silently — never block the user's experience */ });
+}
+
+function validateLead(){
+  const name = document.getElementById('inpName').value.trim();
+  const email = document.getElementById('inpEmail').value.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  document.getElementById('f-name').classList.toggle('invalid', name.length===0);
+  document.getElementById('f-email').classList.toggle('invalid', !emailOk);
+  return name.length>0 && emailOk;
+}
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  if(!validateLead()) return;
+  leadInfo = {
+    name: document.getElementById('inpName').value.trim(),
+    email: document.getElementById('inpEmail').value.trim(),
+    company: document.getElementById('inpCompany').value.trim(),
+    role: document.getElementById('inpRole').value.trim()
+  };
+
+  // Fire immediately so you're notified even if they abandon the quiz partway through.
+  submitLead({
+    status: 'started',
+    name: leadInfo.name,
+    email: leadInfo.email,
+    company: leadInfo.company,
+    role: leadInfo.role
+  });
+
+  document.getElementById('leadView').style.display = 'none';
+  document.getElementById('quiz-view').style.display = 'block';
+  renderQuestion();
+});
+
+const quizCard = document.getElementById('quizCard');
+const nextBtn = document.getElementById('nextBtn');
+const backBtn = document.getElementById('backBtn');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+
+function renderQuestion(){
+  const d = dimensions[current];
+  let optsHtml = '';
+  for(let i=1;i<=5;i++){
+    const checked = answers[current]===i ? 'checked' : '';
+    optsHtml += `
+      <div class="opt">
+        <input type="radio" name="q${current}" id="q${current}_${i}" value="${i}" ${checked}>
+        <label for="q${current}_${i}">
+          <div class="num">${i}</div>
+          <div class="txt">
+            <div class="lvl-tag">LEVEL ${i}</div>
+            <div class="lvl-name">${LEVEL_NAMES[i-1]}</div>
+            <div class="lvl-desc">${d.levels[i-1]}</div>
+          </div>
+        </label>
+      </div>`;
+  }
+  quizCard.innerHTML = `
+    <div class="q-dim-row">
+      <div class="q-icon">${d.icon}</div>
+      <div>
+        <div class="q-dim">Finance Dimension ${current+1}/10</div>
+        <div class="q-title">${d.name}</div>
+      </div>
+    </div>
+    <div class="q-def">${d.def}</div>
+    <div class="scale">${optsHtml}</div>
+  `;
+  quizCard.querySelectorAll('input[type=radio]').forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      answers[current] = parseInt(e.target.value);
+      nextBtn.disabled = false;
+    });
+  });
+
+  const pct = Math.round(((current+1)/dimensions.length)*100);
+  progressFill.style.width = `${(current/dimensions.length)*100 + 10}%`;
+  progressLabel.textContent = `Question ${current+1} of ${dimensions.length} · ${pct}%`;
+  backBtn.disabled = current===0;
+  nextBtn.disabled = answers[current]===null;
+  nextBtn.textContent = current === dimensions.length-1 ? 'See my results' : 'Next';
+}
+
+nextBtn.addEventListener('click', ()=>{
+  if(current < dimensions.length-1){ current++; renderQuestion(); }
+  else{ showResults(); }
+});
+backBtn.addEventListener('click', ()=>{ if(current>0){ current--; renderQuestion(); } });
+
+function getTier(total){ return tiers.find(t=>total>=t.min && total<=t.max); }
+
+function showResults(){
+  const total = answers.reduce((a,b)=>a+b,0);
+  const tier = getTier(total);
+
+  document.getElementById('quiz-view').style.display = 'none';
+  const resultView = document.getElementById('resultView');
+  resultView.classList.add('show');
+
+  document.getElementById('tierBadge').textContent = tier.name + ' Tier';
+  document.getElementById('scoreBig').textContent = total;
+  document.getElementById('tierName').textContent = tier.name;
+  document.getElementById('tierDesc').textContent = tier.desc;
+
+  ['mt1','mt2','mt3','mt4','mt5'].forEach(id=>{
+    document.getElementById(id).classList.toggle('active', id===tier.key);
+  });
+
+  const benchRows = [
+    { label: "Your Score", value: total, you: true },
+    { label: "Average SaaS Startup", value: 29 },
+    { label: "Series A Average", value: 37 },
+    { label: "Top Quartile", value: 45 }
+  ];
+  document.getElementById('benchmarkChart').innerHTML = benchRows.map(r => `
+    <div class="bench-row ${r.you ? 'you' : ''}">
+      <div class="blabel">${r.label}</div>
+      <div class="btrack"><div class="bfill" style="width:${(r.value/50)*100}%"></div></div>
+      <div class="bval">${r.value}</div>
+    </div>
+  `).join('');
+
+  const ranked = dimensions.map((d,i)=>({ name:d.name, icon:d.icon, score:answers[i] }))
+    .sort((a,b)=> b.score - a.score);
+  const strengths = ranked.slice(0,3);
+  const weaknesses = ranked.slice(-3).reverse();
+
+  document.getElementById('strengthsList').innerHTML = strengths.map(s=>`
+    <div class="sw-item"><span class="ic">${s.icon}</span><span>${s.name} — Level ${s.score}</span></div>
+  `).join('');
+  document.getElementById('weaknessesList').innerHTML = weaknesses.map(s=>`
+    <div class="sw-item"><span class="ic">${s.icon}</span><span>${s.name} — Level ${s.score}</span></div>
+  `).join('');
+
+  document.getElementById('breakdownList').innerHTML = dimensions.map((d,i)=>`
+    <div class="breakdown-row">
+      <div class="ic">${d.icon}</div>
+      <div class="name">${d.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(answers[i]/5)*100}%"></div></div>
+      <div class="val">${answers[i]}/5</div>
+    </div>
+  `).join('');
+
+  window._resultData = { total, tier, ranked, strengths, weaknesses, answers: answers.slice(), benchRows };
+
+  // Set up the "or email me instead" mailto link, pre-filled with their result
+  // (the primary "Book my complimentary review" button links straight to Calendly)
+  const bookBody = `Hi Harshit,\n\nI just completed the Finance Maturity Scorecard and scored ${total}/50 (${tier.name} tier).\n\nI'd like to book my complimentary 30-minute Finance Maturity Review.\n\nName: ${leadInfo.name}\nCompany: ${leadInfo.company || '-'}\nRole: ${leadInfo.role || '-'}\n\nThanks,\n${leadInfo.name}`;
+  document.getElementById('emailInsteadLink').href =
+    `mailto:hmadvisory11@gmail.com?subject=${encodeURIComponent('Complimentary Finance Maturity Review — ' + leadInfo.name)}&body=${encodeURIComponent(bookBody)}`;
+
+  // Send the completed result to Formspree (separate from the earlier "started" event).
+  submitLead({
+    status: 'completed',
+    name: leadInfo.name,
+    email: leadInfo.email,
+    company: leadInfo.company,
+    role: leadInfo.role,
+    score: total,
+    tier: tier.name,
+    breakdown: dimensions.map((d,i)=>`${d.name}: Level ${answers[i]}`).join(' | ')
+  });
+}
+
+document.getElementById('retakeBtn').addEventListener('click', ()=>{
+  current = 0;
+  answers.fill(null);
+  document.getElementById('resultView').classList.remove('show');
+  document.getElementById('quiz-view').style.display = 'block';
+  renderQuestion();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', generatePDF);
+
+function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 48;
+  let y = 0;
+
+  const navy = [11,27,43];
+  const gold = [198,161,91];
+  const ink = [22,33,46];
+  const muted = [102,112,133];
+
+  const data = window._resultData;
+  if(!data){ return; }
+
+  // Header band
+  doc.setFillColor(...navy);
+  doc.rect(0,0,pageW,120,'F');
+  doc.setDrawColor(...gold); doc.setLineWidth(1.2);
+  doc.circle(margin+16, 46, 16, 'S');
+  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(...gold);
+  doc.text('HM', margin+16, 50, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(200,210,220);
+  doc.text('HM ADVISORY  ·  FRACTIONAL CFO & FP&A', margin+44, 42);
+  doc.setFont('times','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
+  doc.text('Finance Maturity Report', margin+44, 66);
+  doc.setFont('helvetica','italic'); doc.setFontSize(9.5); doc.setTextColor(...gold);
+  doc.text('"Your Numbers Should Work as Hard as You Do."', margin+44, 84);
+
+  y = 134;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...muted);
+  const preparedFor = `Prepared for ${leadInfo.name}${leadInfo.company ? ' · ' + leadInfo.company : ''}${leadInfo.role ? ' · ' + leadInfo.role : ''}`;
+  doc.text(preparedFor, margin, y);
+
+  y = 184;
+
+  // Score block
+  doc.setFont('times','bold'); doc.setFontSize(40); doc.setTextColor(...navy);
+  doc.text(`${data.total} / 50`, margin, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...muted);
+  doc.text('Finance Maturity Score', margin, y+16);
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...navy);
+  doc.roundedRect(pageW-margin-130, y-30, 130, 26, 6, 6, 'S');
+  doc.text(`${data.tier.name.toUpperCase()} TIER`, pageW-margin-65, y-13, {align:'center'});
+
+  y += 34;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(...ink);
+  const tierLines = doc.splitTextToSize(data.tier.desc, pageW - margin*2);
+  doc.text(tierLines, margin, y);
+  y += tierLines.length*14 + 14;
+
+  y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(154,122,50);
+  doc.text('HOW YOU COMPARE', margin, y);
+  y += 14;
+  const benchRows = data.benchRows || [];
+  const labelW = 140, barX = margin + labelW, barMaxW = pageW - margin*2 - labelW - 34;
+  benchRows.forEach(r=>{
+    doc.setFont('helvetica', r.you ? 'bold' : 'normal'); doc.setFontSize(9.5);
+    doc.setTextColor(...(r.you ? navy : ink));
+    doc.text(r.label, margin, y+7);
+    doc.setDrawColor(225,220,205); doc.setFillColor(225,220,205);
+    doc.roundedRect(barX, y, barMaxW, 9, 3, 3, 'F');
+    const fillColor = r.you ? gold : [201,194,170];
+    doc.setFillColor(...fillColor);
+    doc.roundedRect(barX, y, barMaxW*(r.value/50), 9, 3, 3, 'F');
+    doc.setFont('times','bold'); doc.setFontSize(9.5); doc.setTextColor(...ink);
+    doc.text(String(r.value), barX + barMaxW + 8, y+7);
+    y += 20;
+  });
+  doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(...muted);
+  doc.text('Benchmark figures based on my work with growth-stage SaaS and services companies.', margin, y+4);
+  y += 24;
+
+  // Divider
+  doc.setDrawColor(...gold); doc.setLineWidth(0.75);
+  doc.line(margin, y, pageW-margin, y);
+  y += 24;
+
+  // Strengths / Focus areas
+  const colW = (pageW - margin*2 - 24)/2;
+  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(63,122,84);
+  doc.text('Strengths', margin, y);
+  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(177,75,62);
+  doc.text('Focus Areas', margin + colW + 24, y);
+  y += 18;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  let yS = y, yW = y;
+  data.strengths.forEach(s=>{
+    doc.setTextColor(...gold);
+    doc.text('-', margin, yS);
+    doc.setTextColor(...ink);
+    const lines = doc.splitTextToSize(`${s.name} — Level ${s.score}`, colW - 14);
+    doc.text(lines, margin + 12, yS);
+    yS += lines.length*13 + 6;
+  });
+  data.weaknesses.forEach(s=>{
+    doc.setTextColor(...gold);
+    doc.text('-', margin + colW + 24, yW);
+    doc.setTextColor(...ink);
+    const lines = doc.splitTextToSize(`${s.name} — Level ${s.score}`, colW - 14);
+    doc.text(lines, margin + colW + 36, yW);
+    yW += lines.length*13 + 6;
+  });
+  y = Math.max(yS, yW) + 18;
+
+  doc.setDrawColor(...gold); doc.setLineWidth(0.75);
+  doc.line(margin, y, pageW-margin, y);
+  y += 24;
+
+  // Full breakdown
+  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(...navy);
+  doc.text('Full Breakdown', margin, y);
+  y += 20;
+  doc.setFontSize(9.5);
+  dimensions.forEach((d,i)=>{
+    if(y > 760){ doc.addPage(); y = 60; }
+    doc.setFont('helvetica','normal'); doc.setTextColor(...ink);
+    doc.text(d.name, margin, y);
+    doc.setTextColor(...muted);
+    doc.text(`Level ${data.answers[i]} — ${LEVEL_NAMES[data.answers[i]-1]}`, pageW-margin-140, y);
+    // mini bar
+    const barX = pageW-margin-140+2, barW = 0;
+    doc.setDrawColor(...gold); doc.setFillColor(...gold);
+    doc.roundedRect(margin, y+4, (pageW-margin*2)*(data.answers[i]/5), 3, 1.5, 1.5, 'F');
+    doc.setDrawColor(220,220,220);
+    doc.roundedRect(margin, y+4, pageW-margin*2, 3, 1.5, 1.5, 'S');
+    y += 22;
+  });
+
+  y += 12;
+  if(y > 700){ doc.addPage(); y = 60; }
+  doc.setDrawColor(...gold); doc.setLineWidth(0.75);
+  doc.line(margin, y, pageW-margin, y);
+  y += 24;
+
+  // Next steps
+  doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(...navy);
+  doc.text('Recommended Next Steps', margin, y);
+  y += 20;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  data.weaknesses.forEach(w=>{
+    if(y > 760){ doc.addPage(); y = 60; }
+    doc.setTextColor(...gold);
+    doc.text('-', margin, y);
+    doc.setTextColor(...ink);
+    const lines = doc.splitTextToSize(NEXT_STEPS[w.name] || `Strengthen ${w.name.toLowerCase()} with a documented process.`, pageW-margin*2-18);
+    doc.text(lines, margin+16, y);
+    y += lines.length*14 + 10;
+  });
+
+  y += 14;
+  if(y > 700){ doc.addPage(); y = 60; }
+  doc.setFillColor(...navy);
+  doc.roundedRect(margin, y, pageW-margin*2, 70, 8, 8, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...gold);
+  doc.text('NEXT STEP', margin+18, y+22);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(230,230,230);
+  const ctaLines = doc.splitTextToSize('I help founders and finance leaders turn this scorecard into a 90-day finance infrastructure roadmap. Reach out at hmadvisory11@gmail.com.', pageW-margin*2-36);
+  doc.text(ctaLines, margin+18, y+38);
+
+  doc.save('HM-Advisory-Finance-Maturity-Report.pdf');
+}
+
+</script>
+</body>
+</html>
